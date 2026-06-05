@@ -1,0 +1,8 @@
+# Data / cache files — large or regenerated, not tracked
+*.dat
+*.npz
+*.csv
+
+# Local tooling
+.claude/
+.DS_Store
