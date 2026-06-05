@@ -58,7 +58,7 @@ The GHCNd network is much denser in the eastern U.S. than the west: 68% of the 1
 
 `compute_area_weighted.py` re-aggregates the records on an equal-area grid to remove this bias: each station is weighted by `cos(lat) / (stations in its 2° cell)`, normalized to mean 1, so every occupied grid cell contributes in proportion to its **area** rather than its station count. The unweighted recompute reproduces `records_cache.npz` exactly as a check.
 
-**Result:** area-weighting barely changes the curves — but it reduces records in the 1930s and raises them in the last 10 years enough to make the last decade have, on average, more extreme temperatures.
+**Result:** area-weighting doesn't change the curves much — but it is enough to make the last decade have (on average) more extreme temperatures.
 
 ![Area-weighted adjusted records](adjusted_records_areaweighted.png)
 
@@ -66,7 +66,7 @@ The GHCNd network is much denser in the eastern U.S. than the west: 68% of the 1
 
 To gauge how much the FLs.52j adjustment matters, `compute_raw_records.py` reconstructs the **raw** (unadjusted) temperatures from the adjusted checkpoints — `raw = round((adjusted − monthly_offset) × 10) / 10`, which is bit-exact because raw temps are whole tenths of a degree — and recomputes records on the same 1,266 stations (an additive offset does not change data availability). `replot_raw_vs_adjusted.py` overlays the two.
 
-**Result:** unlike spatial weighting, the adjustment is a first-order effect on the ratio. It lowers the early-century ratio and roughly doubles the recent one (1900–1929: raw ≈ 0.82 vs adjusted ≈ 0.67; 2010–2024: raw ≈ 3.2 vs adjusted ≈ 5.8), steepening the shift from more record lows to more record highs. This is consistent with the adjustment removing time-of-observation bias, station moves, and the 1980s MMTS instrument transition. (Raw shows *more* total records because whole-tenths temperatures tie often and each tie counts in every tied year; the ratio cancels this out.)
+**Result:** the adjustment is a first-order effect. It lowers the early-century records and increases the recent decades. (Raw shows *more* total records because whole-tenths temperatures tie often and each tie counts in every tied year; including the offset tends to break the ties)
 
 ![Adjusted vs raw records](adjusted_vs_raw_records.png)
 
