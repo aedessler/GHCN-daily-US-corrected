@@ -1,6 +1,6 @@
 # U.S. Daily Temperature Records — Adjusted Data
 
-Calculates time series of number of temperature records in CONUS using **homogeneity-adjusted** GHCN daily data rather than raw observations.
+Calculates time series of number of temperature records in CONUS using **homogeneity-adjusted** GHCN-daily data rather than raw observations.
 
 ## What it produces
 
@@ -25,7 +25,7 @@ Additional outputs:
 
 | Data | Path |
 |------|------|
-| raw GHCND daily observations (by year) | `https://www.ncei.noaa.gov/data/north-american-dataset/access/` |
+| raw GHCN-daily observations (by year) | `https://www.ncei.noaa.gov/data/north-american-dataset/access/` |
 | Monthly FLs.52j adjustment offsets | see below |
 | Station metadata | Downloaded at runtime from NOAA NCEI |
 
@@ -54,7 +54,7 @@ For each station × calendar day-of-year pair, the year with the **highest adjus
 
 ## Spatial weighting
 
-The GHCNd network is much denser in the eastern U.S. than the west: 68% of the 1,266 stations lie east of 100°W, although the west is roughly half of CONUS by area. Because the main figure **sums** record-setting station-days nationally, the totals are weighted toward eastern climate.
+The GHCN-daily network is much denser in the eastern U.S. than the west: 68% of the 1,266 stations lie east of 100°W, although the west is roughly half of CONUS by area. Because the main figure **sums** record-setting station-days nationally, the totals are weighted toward eastern climate.
 
 `compute_area_weighted.py` re-aggregates the records on an equal-area grid to remove this bias: each station is weighted by `cos(lat) / (stations in its 2° cell)`, normalized to mean 1, so every occupied grid cell contributes in proportion to its **area** rather than its station count. The unweighted recompute reproduces `records_cache.npz` exactly as a check.
 
