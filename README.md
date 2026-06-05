@@ -1,6 +1,6 @@
 # U.S. Daily Temperature Records — Adjusted Data
 
-Reproduces the "Conterminous U.S. Observed Number of Daily Temperature Records" figure (originally by Chris Mortz / NOAA) using **homogeneity-adjusted** GHCND daily data rather than raw observations.
+Calculates time series of number of temperature records in CONUS using **homogeneity-adjusted** GHCND daily data rather than raw observations.
 
 ## What it produces
 
@@ -24,17 +24,17 @@ Additional outputs:
 
 | Data | Path |
 |------|------|
-| GHCND daily observations (by year) | `/Volumes/adessler_lab/GHCND/by_year/YYYY.csv.gz` |
-| Monthly FLs.52j adjustment offsets | `/Volumes/adessler_lab/GHCND/monthly_data/processed/monthly_offsets.nc` |
+| raw GHCND daily observations (by year) | `https://www.ncei.noaa.gov/data/north-american-dataset/access/` |
+| Monthly FLs.52j adjustment offsets | see below |
 | Station metadata | Downloaded at runtime from NOAA NCEI |
 
-The adjustment offsets are from the [NOAA North American Dataset (FLs.52j)](https://www.ncei.noaa.gov/data/north-american-dataset/), which corrects for station moves, time-of-observation changes, and instrument changes. The adjustment is applied as:
+The adjustment is derived from monthly data and applied as:
 
 ```
 adjusted_temp = raw_temp_C + monthly_offset_C
 ```
 
-where `monthly_offset = FLs.52j − raw` (from the NetCDF file), and the same offset is applied to all days within a calendar month. The `monthly_offsets.nc` file is produced by a companion repository: [aedessler/GHCN-monthly-offsets](https://github.com/aedessler/GHCN-monthly-offsets).
+where the same offset is applied to all days within a calendar month. The `monthly_offsets.nc` file is produced by a companion repository: [aedessler/GHCN-monthly-offsets](https://github.com/aedessler/GHCN-monthly-offsets).
 
 ## Station selection
 
@@ -76,7 +76,3 @@ python replot_areaweighted.py          # -> adjusted_records_areaweighted.png
 Requires: `numpy`, `pandas`, `xarray`, `matplotlib`, and `cartopy` (all in the Miniconda base environment).
 
 `compute_adjusted_records.py` runs approximately 50–60 minutes, dominated by reading and filtering the compressed year files from the external drive. The remaining scripts run in seconds from the cached checkpoint memmaps (`compute_area_weighted.py` re-reads them, `plot_station_map.py` / `station_density.py` also download station metadata from NOAA NCEI).
-
-## Original figure
-
-`HJuIBQRWUAM7SPU.png` — unadjusted version, computed from 711 stations, 1895–2024.
