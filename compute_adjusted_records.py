@@ -17,13 +17,15 @@ from pathlib import Path
 import urllib.request
 from collections import defaultdict
 
-DATA_DIR     = Path("/Volumes/adessler_lab/GHCND/by_year")
+YEAR_DIR     = Path("/Volumes/adessler_lab/GHCND/by_year")   # external source: by-year GHCN files
 OFFSETS_FILE = Path("/Volumes/adessler_lab/GHCND/monthly_data/processed/monthly_offsets.nc")
 OUT_DIR      = Path("/Users/adessler/Desktop/recHighs")
-CACHE_FILE   = OUT_DIR / "records_cache.npz"
-CKPT_TMAX    = OUT_DIR / "checkpoint_tmax.dat"
-CKPT_TMIN    = OUT_DIR / "checkpoint_tmin.dat"
-CKPT_META    = OUT_DIR / "checkpoint_meta.npz"
+DATA_DIR     = OUT_DIR / "data"                              # local caches/checkpoints (.dat/.npz)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE   = DATA_DIR / "records_cache.npz"
+CKPT_TMAX    = DATA_DIR / "checkpoint_tmax.dat"
+CKPT_TMIN    = DATA_DIR / "checkpoint_tmin.dat"
+CKPT_META    = DATA_DIR / "checkpoint_meta.npz"
 
 STUDY_START   = 1900
 STUDY_END     = 2024
@@ -166,7 +168,7 @@ for year in years:
     if year in years_done:
         continue
 
-    yfile = DATA_DIR / f"{year}.csv.gz"
+    yfile = YEAR_DIR / f"{year}.csv.gz"
 
     # Retry up to 10 times in case of transient network-drive disconnect
     for attempt in range(10):
@@ -291,20 +293,22 @@ tmin_flat = tmin_data.transpose(0, 2, 1).reshape(-1, N_YEARS)
 valid_tmax = ~np.all(np.isnan(tmax_flat), axis=1)
 valid_tmin = ~np.all(np.isnan(tmin_flat), axis=1)
 
-rec_highs = np.zeros(N_YEARS, dtype=int)
+rec_highs = np.zeros(N_YEARS, dtype=float)
 if valid_tmax.any():
     tmax_max  = np.nanmax(tmax_flat[valid_tmax], axis=1, keepdims=True)
-    max_match = (tmax_flat[valid_tmax] == tmax_max)
+    max_match = (tmax_flat[valid_tmax] == tmax_max).astype(np.float64)
+    max_match /= max_match.sum(axis=1, keepdims=True)   # split ties: N tied years each get 1/N
     rec_highs = np.sum(max_match, axis=0)
 
-rec_lows = np.zeros(N_YEARS, dtype=int)
+rec_lows = np.zeros(N_YEARS, dtype=float)
 if valid_tmin.any():
     tmin_min  = np.nanmin(tmin_flat[valid_tmin], axis=1, keepdims=True)
-    min_match = (tmin_flat[valid_tmin] == tmin_min)
+    min_match = (tmin_flat[valid_tmin] == tmin_min).astype(np.float64)
+    min_match /= min_match.sum(axis=1, keepdims=True)    # split ties: N tied years each get 1/N
     rec_lows  = np.sum(min_match, axis=0)
 
-print(f"Total record highs: {rec_highs.sum():,}  (expected ≈ {n_good*365:.0f})", flush=True)
-print(f"Total record lows:  {rec_lows.sum():,}",  flush=True)
+print(f"Total record highs: {rec_highs.sum():,.1f}  (expected ≈ {n_good*365:.0f})", flush=True)
+print(f"Total record lows:  {rec_lows.sum():,.1f}",  flush=True)
 
 np.savez(CACHE_FILE, years=years, rec_highs=rec_highs, rec_lows=rec_lows, n_good=np.array(n_good))
 print(f"Cached to {CACHE_FILE}", flush=True)

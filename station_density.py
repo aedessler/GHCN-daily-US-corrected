@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Quantify the E/W station-density imbalance and cache good-station coords."""
-import numpy as np, urllib.request, csv
+import numpy as np, csv
 from pathlib import Path
+from helpers import fetch_station_coords
 
 OUT = Path("/Users/adessler/Desktop/recHighs")
-meta = np.load(OUT / "checkpoint_meta.npz", allow_pickle=True)
+DATA = OUT / "data"
+meta = np.load(DATA / "checkpoint_meta.npz", allow_pickle=True)
 shape = tuple(int(x) for x in meta['shape']); cands = list(meta['candidates'])
 N_YEARS = 125; MIN_YEARS = 100; FRAC = 0.80
 
-tmax = np.memmap(OUT/"checkpoint_tmax.dat", dtype='float32', mode='r', shape=shape)
-tmin = np.memmap(OUT/"checkpoint_tmin.dat", dtype='float32', mode='r', shape=shape)
+tmax = np.memmap(DATA/"checkpoint_tmax.dat", dtype='float32', mode='r', shape=shape)
+tmin = np.memmap(DATA/"checkpoint_tmin.dat", dtype='float32', mode='r', shape=shape)
 npos = N_YEARS * 365.25
 good = ((np.sum(~np.all(np.isnan(tmax),axis=2),axis=1) >= MIN_YEARS) &
         (np.sum(~np.all(np.isnan(tmin),axis=2),axis=1) >= MIN_YEARS) &
@@ -17,17 +19,10 @@ good = ((np.sum(~np.all(np.isnan(tmax),axis=2),axis=1) >= MIN_YEARS) &
         (np.sum(~np.isnan(tmin),axis=(1,2))/npos >= FRAC))
 gs = [cands[i] for i in range(len(cands)) if good[i]]
 
-lines = urllib.request.urlopen(
-    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt").read().decode().split('\n')
-m = {}
-for ln in lines:
-    if len(ln) < 30: continue
-    try: m[ln[:11].strip()] = (float(ln[12:20]), float(ln[21:30]))
-    except ValueError: pass
-
+m = fetch_station_coords()
 coords = [(s, *m[s]) for s in gs if s in m]
 lons = np.array([c[2] for c in coords])
-with open(OUT/"good_stations.csv", "w", newline="") as f:
+with open(DATA/"good_stations.csv", "w", newline="") as f:
     w = csv.writer(f); w.writerow(["station","lat","lon"]); w.writerows(coords)
 
 # CONUS spans -125..-66 (59° lon). 100°W is the conventional E/W divide.

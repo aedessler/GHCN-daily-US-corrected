@@ -9,16 +9,19 @@ checkpoint memmaps, then join NOAA lat/lon metadata and plot.
 """
 
 import numpy as np
-import urllib.request
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from pathlib import Path
+from helpers import fetch_station_coords
 
 OUT_DIR   = Path("/Users/adessler/Desktop/recHighs")
-CKPT_TMAX = OUT_DIR / "checkpoint_tmax.dat"
-CKPT_TMIN = OUT_DIR / "checkpoint_tmin.dat"
-CKPT_META = OUT_DIR / "checkpoint_meta.npz"
+DATA_DIR  = OUT_DIR / "data"
+FIG_DIR   = OUT_DIR / "figures"
+FIG_DIR.mkdir(parents=True, exist_ok=True)
+CKPT_TMAX = DATA_DIR / "checkpoint_tmax.dat"
+CKPT_TMIN = DATA_DIR / "checkpoint_tmin.dat"
+CKPT_META = DATA_DIR / "checkpoint_meta.npz"
 
 # Must match compute_adjusted_records.py
 STUDY_START, STUDY_END = 1900, 2024
@@ -57,17 +60,7 @@ print(f"Stations passing completeness filter: {len(good_stations)}")
 # 2. NOAA lat/lon metadata for the good stations
 # ---------------------------------------------------------------
 print("Downloading station metadata …")
-STA_URL = "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt"
-sta_lines = urllib.request.urlopen(STA_URL).read().decode().split('\n')
-sta_meta = {}
-for line in sta_lines:
-    if len(line) < 30:
-        continue
-    sid = line[:11].strip()
-    try:
-        sta_meta[sid] = (float(line[12:20]), float(line[21:30]))
-    except ValueError:
-        continue
+sta_meta = fetch_station_coords()
 
 lats = np.array([sta_meta[s][0] for s in good_stations if s in sta_meta])
 lons = np.array([sta_meta[s][1] for s in good_stations if s in sta_meta])
@@ -98,7 +91,7 @@ ax.set_title(
     f"{MIN_DATA_FRAC*100:.0f}% data, {STUDY_START}–{STUDY_END}",
     fontsize=12, fontweight='bold')
 
-out = OUT_DIR / "station_map.png"
+out = FIG_DIR / "station_map.png"
 fig.savefig(out, dpi=150, bbox_inches='tight')
 print(f"Saved: {out}")
 plt.close()

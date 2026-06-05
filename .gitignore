@@ -1,8 +1,17 @@
 # Data / cache files — large or regenerated, not tracked
+data/
 *.dat
 *.npz
 *.csv
 
+# MJJAS warm-season exploration — kept local, not committed
+MJJAS/
+
+# Kept on disk but not tracked/pushed
+substack_post.md
+figures/HJuIBQRWUAM7SPU.png
+
 # Local tooling
 .claude/
+__pycache__/
 .DS_Store

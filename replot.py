@@ -11,7 +11,10 @@ import pandas as pd
 from pathlib import Path
 
 OUT_DIR    = Path("/Users/adessler/Desktop/recHighs")
-CACHE_FILE = OUT_DIR / "records_cache.npz"
+DATA_DIR   = OUT_DIR / "data"
+FIG_DIR    = OUT_DIR / "figures"
+FIG_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE = DATA_DIR / "records_cache.npz"
 SMOOTH_YRS = 15   # window for centered running average (must be odd)
 
 if not CACHE_FILE.exists():
@@ -112,8 +115,8 @@ fig.text(0.01, 0.01,
          fontsize=7, color='gray')
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.97])
-fig.savefig(OUT_DIR / "adjusted_records.png", dpi=150, bbox_inches='tight')
-print(f"Saved: {OUT_DIR / 'adjusted_records.png'}")
+fig.savefig(FIG_DIR / "adjusted_records.png", dpi=150, bbox_inches='tight')
+print(f"Saved: {FIG_DIR / 'adjusted_records.png'}")
 plt.close()
 
 # ---------------------------------------------------------------
@@ -121,11 +124,11 @@ plt.close()
 # ---------------------------------------------------------------
 pd.DataFrame({
     'year':              years,
-    'rec_highs':         rec_highs.astype(int),
-    'rec_lows':          rec_lows.astype(int),
+    'rec_highs':         rec_highs.round(3),
+    'rec_lows':          rec_lows.round(3),
     'ratio':             ratio,
     f'centered{SMOOTH_YRS}_highs': trail_highs,
     f'centered{SMOOTH_YRS}_lows':  trail_lows,
     f'centered{SMOOTH_YRS}_ratio': trail_ratio,
-}).to_csv(OUT_DIR / "adjusted_records.csv", index=False)
-print(f"Saved CSV: {OUT_DIR / 'adjusted_records.csv'}")
+}).to_csv(DATA_DIR / "adjusted_records.csv", index=False)
+print(f"Saved CSV: {DATA_DIR / 'adjusted_records.csv'}")
