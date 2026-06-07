@@ -2,25 +2,6 @@
 
 Calculates time series of number of temperature records in CONUS using **homogeneity-adjusted** GHCN-daily data rather than raw observations.
 
-## What it produces
-
-Three-panel figure (`adjusted_records.png`) and a CSV of annual counts (`adjusted_records.csv`):
-
-1. **Daily Record Highs** — number of station–day combinations that set an all-time TMAX record in each year
-2. **Daily Record Lows** — same for all-time TMIN records
-3. **Ratio of Highs to Lows** — values > 1 indicate more record-breaking heat than cold
-
-![Adjusted daily temperature records](figures/adjusted_records.png)
-
-Additional outputs:
-
-| File | Produced by | Description |
-|------|-------------|-------------|
-| `station_map.png` | `plot_station_map.py` | Cartopy map of the stations used in the figure, over the 1930–1939 JJA TMAX anomaly (Berkeley Earth) |
-| `good_stations.csv` | `station_density.py` | Station IDs and lat/lon of the stations used |
-| `adjusted_records_areaweighted.png` | `plot_records.py adjusted weighted` | Equal-area-weighted vs unweighted comparison (see [Spatial weighting](#spatial-weighting)) |
-| `adjusted_vs_raw_records.png` | `plot_records.py raw adjusted` | Adjusted vs raw/unadjusted comparison (see [Effect of the homogeneity adjustment](#effect-of-the-homogeneity-adjustment)) |
-
 ## Data sources
 
 | Data | Path |
@@ -29,11 +10,6 @@ Additional outputs:
 | Monthly FLs.52j adjustment offsets | see below |
 | Station metadata | Downloaded at runtime from NOAA NCEI |
 | Berkeley Earth gridded TMAX (`Complete_TMAX_LatLong1.nc`) | [berkeleyearth.org/data](https://berkeleyearth.org/data/) — [direct download](https://berkeley-earth-temperature.s3.us-west-1.amazonaws.com/Global/Gridded/Complete_TMAX_LatLong1.nc) (~140 MB) |
-
-The Berkeley Earth file is the gridded monthly land-only maximum-temperature
-anomaly field (1° × 1°, relative to a 1951–1980 climatology) used as the map
-background in `plot_station_map.py`. It is large and git-ignored, so download it
-into the repository root before running that script.
 
 The adjustment is derived from monthly data and applied as:
 
@@ -45,12 +21,11 @@ where the same offset is applied to all days within a calendar month. The `month
 
 ## Station selection
 
-Matches the methodology of the original figure:
 - **CONUS only**: latitude 24.5–49.5°N, longitude −125 to −66°W
 - **≥100 years** of TMAX and TMIN data within the 1900–2024 study period
 - **≥80%** of all possible station-days have valid, unflagged observations
 
-This yields **1,266 stations**. (The stations actually used are not stored in `records_cache.npz`, which holds only the annual totals; they are recovered by re-applying the completeness filter to the checkpoint memmaps — see `plot_station_map.py` and `station_density.py`.)
+This yields **1,266 stations**. 
 
 `plot_station_map.py` draws these stations over a color field of the **1930–1939 JJA (Jun–Aug) maximum-temperature anomaly** from the Berkeley Earth gridded TMAX product (relative to the 1951–1980 climatology), which shows the Dust Bowl heat over the central U.S. It also contains an optional **station-density vs. anomaly** scatter (`figures/density_vs_anomaly.png`), aggregated on a coarse CONUS grid and disabled by default behind the `RUN_DENSITY_SCATTER` flag.
 
@@ -58,7 +33,7 @@ This yields **1,266 stations**. (The stations actually used are not stored in `r
 
 ## Record definition
 
-For each station × calendar day-of-year pair, the year with the **highest adjusted TMAX** across all years receives one record high, and the year with the **lowest adjusted TMIN** receives one record low. **Ties are split fractionally**: if N years tie for a station–DOY record, each receives 1/N of a record, so every station–DOY pair contributes exactly one record total regardless of ties. The total number of records therefore equals the number of valid station–DOY pairs (identical for highs and lows), and the expected count in any given year ≈ (N stations × 365) / N years ≈ 3,700.
+For each station × calendar day-of-year pair, the year with the **highest adjusted TMAX** across all years receives one record high, and the year with the **lowest adjusted TMIN** receives one record low. **Ties are split fractionally**: if N years tie for a station–DOY record, each receives 1/N of a record, so every station–DOY pair contributes exactly one record total regardless of ties. The total number of records therefore equals the number of valid station–DOY pairs (identical for highs and lows), and the expected count in any given year ≈ (#stations × 365) / #years ≈ 3,700.
 
 ## Spatial weighting
 
@@ -66,15 +41,11 @@ The GHCN-daily network is much denser in the eastern U.S. than the west: 68% of 
 
 `plot_records.py` re-aggregates the records on an equal-area grid (its `weighted` series) to remove this bias: each station is weighted by `cos(lat) / (stations in its 2° cell)`, normalized to mean 1, so every occupied grid cell contributes in proportion to its **area** rather than its station count.
 
-**Result:** area-weighting doesn't change the curves much — but it is enough to make the last decade have (on average) more extreme temperatures.
-
 ![Area-weighted adjusted records](figures/adjusted_records_areaweighted.png)
 
 ## Effect of the homogeneity adjustment
 
-To gauge how much the FLs.52j adjustment matters, the `raw` series reconstructs the **raw** (unadjusted) temperatures from the adjusted checkpoints — `raw = round((adjusted − monthly_offset) × 10) / 10`, which is bit-exact because raw temps are whole tenths of a degree — and recomputes records on the same 1,266 stations (an additive offset does not change data availability). `plot_records.py raw adjusted` overlays the two.
-
-**Result:** the adjustment is a first-order effect. It lowers the early-century records and increases the recent decades. With fractional tie-splitting, raw and adjusted have the *same* total number of records, so the two curves differ only in how records are distributed across years — the raw data places relatively more record highs in the early/mid 20th century, the adjusted data shifts them toward recent decades.
+The adjustment is a first-order effect. It lowers the early-century records and increases the recent decades. With fractional tie-splitting, raw and adjusted have the *same* total number of records, so the two curves differ only in how records are distributed across years — the raw data places relatively more record highs in the early/mid 20th century, the adjusted data shifts them toward recent decades.
 
 ![Adjusted vs raw records](figures/adjusted_vs_raw_records.png)
 
