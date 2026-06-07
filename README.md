@@ -16,7 +16,7 @@ Additional outputs:
 
 | File | Produced by | Description |
 |------|-------------|-------------|
-| `station_map.png` | `plot_station_map.py` | Cartopy map of the stations used in the figure |
+| `station_map.png` | `plot_station_map.py` | Cartopy map of the stations used in the figure, over the 1930–1939 JJA TMAX anomaly (Berkeley Earth) |
 | `good_stations.csv` | `station_density.py` | Station IDs and lat/lon of the stations used |
 | `adjusted_records_areaweighted.png` | `plot_records.py adjusted weighted` | Equal-area-weighted vs unweighted comparison (see [Spatial weighting](#spatial-weighting)) |
 | `adjusted_vs_raw_records.png` | `plot_records.py raw adjusted` | Adjusted vs raw/unadjusted comparison (see [Effect of the homogeneity adjustment](#effect-of-the-homogeneity-adjustment)) |
@@ -28,6 +28,12 @@ Additional outputs:
 | raw GHCN-daily observations (by year) | `https://www.ncei.noaa.gov/data/north-american-dataset/access/` |
 | Monthly FLs.52j adjustment offsets | see below |
 | Station metadata | Downloaded at runtime from NOAA NCEI |
+| Berkeley Earth gridded TMAX (`Complete_TMAX_LatLong1.nc`) | [berkeleyearth.org/data](https://berkeleyearth.org/data/) — [direct download](https://berkeley-earth-temperature.s3.us-west-1.amazonaws.com/Global/Gridded/Complete_TMAX_LatLong1.nc) (~140 MB) |
+
+The Berkeley Earth file is the gridded monthly land-only maximum-temperature
+anomaly field (1° × 1°, relative to a 1951–1980 climatology) used as the map
+background in `plot_station_map.py`. It is large and git-ignored, so download it
+into the repository root before running that script.
 
 The adjustment is derived from monthly data and applied as:
 
@@ -45,6 +51,8 @@ Matches the methodology of the original figure:
 - **≥80%** of all possible station-days have valid, unflagged observations
 
 This yields **1,266 stations**. (The stations actually used are not stored in `records_cache.npz`, which holds only the annual totals; they are recovered by re-applying the completeness filter to the checkpoint memmaps — see `plot_station_map.py` and `station_density.py`.)
+
+`plot_station_map.py` draws these stations over a color field of the **1930–1939 JJA (Jun–Aug) maximum-temperature anomaly** from the Berkeley Earth gridded TMAX product (relative to the 1951–1980 climatology), which shows the Dust Bowl heat over the central U.S. It also contains an optional **station-density vs. anomaly** scatter (`figures/density_vs_anomaly.png`), aggregated on a coarse CONUS grid and disabled by default behind the `RUN_DENSITY_SCATTER` flag.
 
 ![Map of stations used](figures/station_map.png)
 

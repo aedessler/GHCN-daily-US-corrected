@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Cartopy map of the stations used in adjusted_records.png, over a color map of
-the 1934-1936 JJA mean surface-temperature anomaly (the Dust Bowl heat).
+the 1930-1939 JJA mean maximum-temperature anomaly (the Dust Bowl decade).
 
 The station set is the `n_good` stations that pass the completeness filter in
 compute_adjusted_records.py. records_cache.npz only stores the annual counts,
@@ -9,7 +9,9 @@ so we recover the exact set by re-applying the same filter to the checkpoint
 memmaps, then join NOAA lat/lon metadata and plot.
 
 The background field is the Berkeley Earth gridded TMAX anomaly
-(Complete_TMAX_LatLong1.nc), averaged over June/July/August of 1934-1936.
+(Complete_TMAX_LatLong1.nc), averaged over June/July/August of FIELD_YEARS
+(1930-1939). Set RUN_DENSITY_SCATTER=True to also write
+figures/density_vs_anomaly.png, a scatter of station density vs. that anomaly.
 """
 
 import warnings
@@ -146,7 +148,7 @@ cbar.set_label("JJA TMAX anomaly (°C, vs 1951–1980)", fontsize=10)
 
 ax.set_title(
     f"{len(lats)} GHCND stations used in the adjusted records figure\n"
-    f"over the {FIELD_YEARS[0]}–{FIELD_YEARS[-1]} JJA mean temperature anomaly",
+    f"over the {FIELD_YEARS[0]}–{FIELD_YEARS[-1]} JJA max temperature anomaly",
     fontsize=12, fontweight='bold')
 
 out = FIG_DIR / "station_map.png"
