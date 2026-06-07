@@ -47,7 +47,7 @@ The GHCN-daily network is much denser in the eastern U.S. than the west: 68% of 
 
 `plot_records.py` re-aggregates the records on an equal-area grid (its `weighted` series) to remove this bias: each station is weighted by `cos(lat) / (stations in its 2° cell)`, normalized to mean 1, so every occupied grid cell contributes in proportion to its **area** rather than its station count.
 
-![Area-weighted adjusted records](figures/record_raw_adj_wtd.png)
+![Area-weighted adjusted records](figures/records_raw_adj_wtd.png)
 
 
 ## General comparison figure
