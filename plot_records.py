@@ -185,8 +185,8 @@ def make_figure(years, series, selection, n_good, smooth, grid_deg, outpath,
     note += f"; {smooth}-yr centered means"
     if 'weighted' in selection:
         note += f"; area weighting on a {grid_deg:g}° grid"
-    ax1.text(0.02, 0.74, note, transform=ax1.transAxes, fontsize=8,
-             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
+    # ax1.text(0.02, 0.74, note, transform=ax1.transAxes, fontsize=8,
+    #          bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
     for ax in (ax1, ax2, ax3):
         ax.set_xlim(STUDY_START - 0.5, STUDY_END + 0.5)
         ax.grid(axis='y', alpha=0.3, linewidth=0.5)
