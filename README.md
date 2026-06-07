@@ -35,19 +35,20 @@ This yields **1,266 stations**.
 
 For each station × calendar day-of-year pair, the year with the **highest adjusted TMAX** across all years receives one record high, and the year with the **lowest adjusted TMIN** receives one record low. **Ties are split fractionally**: if N years tie for a station–DOY record, each receives 1/N of a record, so every station–DOY pair contributes exactly one record total regardless of ties. The total number of records therefore equals the number of valid station–DOY pairs (identical for highs and lows), and the expected count in any given year ≈ (#stations × 365) / #years ≈ 3,700.
 
+## Effect of the homogeneity adjustment
+
+The adjustment is a first-order effect. It lowers the early-century records and increases the recent decades. With fractional tie-splitting, raw and adjusted have the *same* total number of records, so the two curves differ only in how records are distributed across years — the raw data places relatively more record highs in the early/mid 20th century, the adjusted data shifts them toward recent decades.
+
+![Adjusted vs raw records](figures/records_raw_adj.png)
+
 ## Spatial weighting
 
 The GHCN-daily network is much denser in the eastern U.S. than the west: 68% of the 1,266 stations lie east of 100°W, although the west is roughly half of CONUS by area. Because the main figure **sums** record-setting station-days nationally, the totals are weighted toward eastern climate.
 
 `plot_records.py` re-aggregates the records on an equal-area grid (its `weighted` series) to remove this bias: each station is weighted by `cos(lat) / (stations in its 2° cell)`, normalized to mean 1, so every occupied grid cell contributes in proportion to its **area** rather than its station count.
 
-![Area-weighted adjusted records](figures/adjusted_records_areaweighted.png)
+![Area-weighted adjusted records](figures/record_raw_adj_wtd.png)
 
-## Effect of the homogeneity adjustment
-
-The adjustment is a first-order effect. It lowers the early-century records and increases the recent decades. With fractional tie-splitting, raw and adjusted have the *same* total number of records, so the two curves differ only in how records are distributed across years — the raw data places relatively more record highs in the early/mid 20th century, the adjusted data shifts them toward recent decades.
-
-![Adjusted vs raw records](figures/adjusted_vs_raw_records.png)
 
 ## General comparison figure
 
