@@ -35,10 +35,13 @@ day-of-year columns are sequential days within each year, so leap vs non-leap
 years differ by up to one calendar day after 28 Feb; with the 5-day window this
 is absorbed into the threshold smoothing, as in the records scripts.
 
+Each selected series gets its own stacked panel (annual = light line, centered
+running mean = heavy line), sharing axes so the panels compare directly.
+
 Examples
-  python plot_wsdi.py                       # raw, adjusted, weighted overlaid
-  python plot_wsdi.py adjusted              # just the adjusted series
-  python plot_wsdi.py raw adjusted          # adjusted vs raw
+  python plot_wsdi.py                       # raw, adjusted, weighted (3 panels)
+  python plot_wsdi.py adjusted              # just the adjusted panel
+  python plot_wsdi.py raw adjusted          # raw and adjusted panels
   python plot_wsdi.py adjusted --ref 1981 2010
   python plot_wsdi.py adjusted --csv data/wsdi_adj.csv
 """
@@ -49,6 +52,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 from plot_records import (load_good, area_weights, reconstruct_raw, OFFSETS_FILE,
                           centered_mean, STUDY_START, STUDY_END, N_DOY,
@@ -183,33 +187,38 @@ def compute(selection, grid_deg, ref, window, pctile, min_run, min_frac):
 # Figure
 # ---------------------------------------------------------------
 def make_figure(years, series, selection, n_good, smooth, grid_deg, ref, outpath):
-    fig, ax = plt.subplots(figsize=(11, 6))
-    for name in selection:                            # canonical order
-        st = dict(STYLE[name])
-        col = st['color'] or ACCENT
-        st['color'] = col
-        ax.plot(years, series[name], color=col, lw=1.0, alpha=0.25, zorder=1)
+    # one stacked panel per series, shared axes so the panels are directly
+    # comparable; light line = annual value, heavy line = centered running mean
+    n = len(selection)
+    fig, axes = plt.subplots(n, 1, figsize=(11, 2.5 * n + 1.3),
+                             sharex=True, sharey=True, squeeze=False)
+    axes = axes[:, 0]
+    for ax, name in zip(axes, selection):
+        col = STYLE[name]['color'] or ACCENT
+        ax.plot(years, series[name], color=col, lw=1.0, alpha=0.30, zorder=1)
         ax.plot(years, centered_mean(series[name], smooth),
-                label=LABEL[name], zorder=3, **st)
-    ax.set_title("Conterminous U.S. Warm Spell Duration Index (WSDI)\n"
+                color=col, lw=2.4, zorder=3)
+        ax.set_title(LABEL[name], fontsize=11, loc='left')
+        ax.set_ylabel("WSDI (days/yr)")
+        ax.grid(axis='y', alpha=0.25, linewidth=0.5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    axes[0].legend([Line2D([0], [0], color='0.4', lw=1.0, alpha=0.5),
+                    Line2D([0], [0], color='0.2', lw=2.4)],
+                   ['annual', f'{smooth}-yr centered mean'],
+                   fontsize=8, loc='upper left', framealpha=0.9)
+    axes[0].set_xlim(STUDY_START - 1, STUDY_END + 1)
+    axes[0].set_ylim(0, None)
+    axes[-1].set_xlabel("Year")
+    fig.suptitle("Conterminous U.S. Warm Spell Duration Index (WSDI)\n"
                  f"{STUDY_START}–{STUDY_END}  ·  "
                  f"days/yr in >= {MIN_RUN}-day TX > p{PCTILE} spells "
-                 f"({ref[0]}-{ref[1]} baseline)", fontsize=13)
-    ax.set_ylabel("WSDI (days per year, station mean)")
-    ax.set_xlabel("Year")
-    ax.set_xlim(STUDY_START - 1, STUDY_END + 1)
-    ax.set_ylim(0, None)
-    ax.plot([], [], color='0.4', lw=1.0, alpha=0.4, label='annual')
-    ax.legend(fontsize=9, loc='upper left', framealpha=0.9)
-    ax.grid(axis='y', alpha=0.25, linewidth=0.5)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    note = (f"Data: NOAA GHCN-daily. {n_good} CONUS stations; thin = annual, "
-            f"thick = {smooth}-yr centered mean")
+                 f"({ref[0]}-{ref[1]} baseline)", fontsize=13, fontweight='bold')
+    note = f"Data: NOAA GHCN-daily. {n_good} CONUS stations, station mean"
     if 'weighted' in selection:
         note += f"; area weighting on a {grid_deg:g}° grid"
     fig.text(0.01, 0.005, note, fontsize=7.5, color='gray', style='italic')
-    plt.tight_layout(rect=[0, 0.02, 1, 1])
+    plt.tight_layout(rect=[0, 0.02, 1, 0.97])
     outpath.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(outpath, dpi=150, bbox_inches='tight')
     plt.close(fig)

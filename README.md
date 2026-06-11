@@ -85,11 +85,13 @@ run contributes all 10 days. The per-station annual totals are averaged across t
 1,266 stations — equal-area weighted for the `weighted` series — to give a national
 mean in days/year.
 
-Like the records plotter, it overlays any subset of `raw` / `adjusted` / `weighted`:
+Each selected series of `raw` / `adjusted` / `weighted` gets its own stacked
+panel, sharing axes so they compare directly; within each panel the annual value
+is a light line and the centered running mean a heavier line:
 
 ```bash
-python plot_wsdi.py                    # all three -> figures/wsdi_raw_adj_wtd.png
-python plot_wsdi.py adjusted           # baseline only -> figures/wsdi_adj.png
+python plot_wsdi.py                    # 3 panels -> figures/wsdi_raw_adj_wtd.png
+python plot_wsdi.py adjusted           # single panel -> figures/wsdi_adj.png
 python plot_wsdi.py adjusted --ref 1981 2010 --csv data/wsdi.csv
 ```
 
