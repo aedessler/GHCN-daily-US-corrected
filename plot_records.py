@@ -18,6 +18,7 @@ Examples
   python plot_records.py raw adjusted            # adjusted vs raw
   python plot_records.py adjusted weighted -o figures/my.png
   python plot_records.py raw adjusted weighted --csv data/records_compare.csv
+  python plot_records.py raw adjusted --top-only   # only the Record Highs panel
 
 The station map (plot_station_map.py) and the MJJAS figures are separate and
 left untouched.
@@ -154,7 +155,7 @@ def compute(selection, grid_deg, doy_sel=None):
 # Figure
 # ---------------------------------------------------------------
 def make_figure(years, series, selection, n_good, smooth, grid_deg, outpath,
-                title=None, season=None):
+                title=None, season=None, top_only=False):
     ratio = {k: np.where(lo > 0, hi / lo, np.nan) for k, (hi, lo) in series.items()}
 
     def draw(ax, idx, accent, title, ylabel):
@@ -168,17 +169,25 @@ def make_figure(years, series, selection, n_good, smooth, grid_deg, outpath,
         ax.set_ylabel(ylabel)
         ax.legend(fontsize=8, loc='upper left')
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 9), sharex=True,
-                                        gridspec_kw={'height_ratios': [3, 3, 2]})
+    if top_only:
+        fig, ax1 = plt.subplots(figsize=(12, 5))
+        panels = (ax1,)
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 9), sharex=True,
+                                            gridspec_kw={'height_ratios': [3, 3, 2]})
+        panels = (ax1, ax2, ax3)
     shown = ", ".join(LABEL[s] for s in selection)
     head = title or "Conterminous U.S. Daily Temperature Records"
     fig.suptitle(f"{head}\n{STUDY_START}–{STUDY_END}  ·  {shown}",
                  fontsize=13, fontweight='bold', y=0.99)
     draw(ax1, 0, 'tab:red',  "Daily Record Highs", "Number of Records")
-    draw(ax2, 1, 'tab:blue', "Daily Record Lows",  "Number of Records")
-    draw(ax3, 2, 'black',    "Ratio of Record Highs to Record Lows", "Highs / Lows")
-    ax3.axhline(1.0, color='k', lw=0.8, ls=':')
-    ax3.set_xlabel("Year")
+    if top_only:
+        ax1.set_xlabel("Year")
+    else:
+        draw(ax2, 1, 'tab:blue', "Daily Record Lows",  "Number of Records")
+        draw(ax3, 2, 'black',    "Ratio of Record Highs to Record Lows", "Highs / Lows")
+        ax3.axhline(1.0, color='k', lw=0.8, ls=':')
+        ax3.set_xlabel("Year")
     note = f"Same {n_good} stations"
     if season:
         note += f" ({season})"
@@ -187,7 +196,7 @@ def make_figure(years, series, selection, n_good, smooth, grid_deg, outpath,
         note += f"; area weighting on a {grid_deg:g}° grid"
     # ax1.text(0.02, 0.74, note, transform=ax1.transAxes, fontsize=8,
     #          bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
-    for ax in (ax1, ax2, ax3):
+    for ax in panels:
         ax.set_xlim(STUDY_START - 0.5, STUDY_END + 0.5)
         ax.grid(axis='y', alpha=0.3, linewidth=0.5)
         ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
@@ -234,17 +243,21 @@ def parse_args():
                    help="centered running-mean window in years (default 15)")
     p.add_argument('--grid', type=float, default=2.0,
                    help="area-weight grid size in degrees (default 2.0)")
+    p.add_argument('--top-only', action='store_true',
+                   help="plot only the top panel (Daily Record Highs)")
     a = p.parse_args()
     sel = [s for s in ALL_SERIES if s in set(a.series)]   # canonical order, dedup
+    suffix = '_highs' if a.top_only else ''
     out = (Path(a.out) if a.out
-           else FIG_DIR / f"records_{'_'.join(SHORT[s] for s in sel)}.png")
-    return sel, out, (Path(a.csv) if a.csv else None), a.smooth, a.grid
+           else FIG_DIR / f"records_{'_'.join(SHORT[s] for s in sel)}{suffix}.png")
+    return sel, out, (Path(a.csv) if a.csv else None), a.smooth, a.grid, a.top_only
 
 
 if __name__ == "__main__":
-    selection, outpath, csvpath, smooth, grid_deg = parse_args()
+    selection, outpath, csvpath, smooth, grid_deg, top_only = parse_args()
     print(f"Series: {', '.join(selection)}")
     years, series, n_good = compute(selection, grid_deg)
-    make_figure(years, series, selection, n_good, smooth, grid_deg, outpath)
+    make_figure(years, series, selection, n_good, smooth, grid_deg, outpath,
+                top_only=top_only)
     if csvpath is not None:
         write_csv(years, series, selection, csvpath)
