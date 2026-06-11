@@ -69,11 +69,40 @@ python plot_records.py adjusted weighted --csv data/cmp.csv   # also dump the se
 
 The output filename defaults to `figures/records_<sel>.png`; `-o/--out` overrides
 it, `--smooth` sets the running-mean window (default 15 yr) and `--grid` the
-area-weight grid size (default 2°). This script folds in the former
-`replot_raw_vs_adjusted.py`, `replot_areaweighted.py`, and
-`replot_areaweighted_vs_unweighted.py` plotters; the MJJAS area-weighted figure
-imports its `compute`/`make_figure` engine. Only `replot.py` (the single-series
+area-weight grid size (default 2°). Only `replot.py` (the single-series
 main figure plus its CSV) is kept as a separate plotter.
+
+## Warm Spell Duration Index (WSDI)
+
+`plot_wsdi.py` computes the ETCCDI / [climpact](https://climpact-sci.org/indices/)
+**Warm Spell Duration Index**. For each station it builds a calendar-day 90th-percentile
+TMAX threshold from a 1961–1990 baseline — the percentile is taken over a centered
+5-day window around each calendar day, so the threshold curve is smooth and
+seasonally varying. Every day whose TMAX exceeds its own calendar-day threshold is
+flagged "hot," and the WSDI counts the days that fall in runs of **≥6 consecutive**
+hot days ("warm spells"): a 5-day run is ignored, a 6-day run counts, and a 10-day
+run contributes all 10 days. The per-station annual totals are averaged across the
+1,266 stations — equal-area weighted for the `weighted` series — to give a national
+mean in days/year.
+
+Like the records plotter, it overlays any subset of `raw` / `adjusted` / `weighted`:
+
+```bash
+python plot_wsdi.py                    # all three -> figures/wsdi_raw_adj_wtd.png
+python plot_wsdi.py adjusted           # baseline only -> figures/wsdi_adj.png
+python plot_wsdi.py adjusted --ref 1981 2010 --csv data/wsdi.csv
+```
+
+`--ref` sets the baseline period, `--pctile`/`--window`/`--min-run` the index
+parameters, and `--smooth`/`--grid` behave as in `plot_records.py`. The same pattern
+seen in the records emerges: the **raw** WSDI has essentially no trend — its
+2010–2024 mean (~7 days/yr) matches the early 1900s, and its largest warm-spell
+years are the 1930s Dust Bowl — while the FLs.52j adjustment roughly **doubles** the
+recent WSDI (~11 days/yr adjusted, ~14 area-weighted). As with the records, the
+recent warm-spell trend is introduced by the homogeneity adjustment rather than
+present in the raw observations.
+
+![WSDI: raw vs adjusted vs area-weighted](figures/wsdi_raw_adj_wtd.png)
 
 ## Repository layout
 
@@ -100,6 +129,9 @@ python station_density.py              # E/W density stats -> data/good_stations
 python plot_records.py raw adjusted weighted -o figures/areaweighted_vs_unweighted_records.png
 python plot_records.py raw adjusted          -o figures/adjusted_vs_raw_records.png
 python plot_records.py adjusted weighted     -o figures/adjusted_records_areaweighted.png
+
+# Warm Spell Duration Index (same raw / adjusted / weighted selection):
+python plot_wsdi.py raw adjusted weighted    # -> figures/wsdi_raw_adj_wtd.png
 ```
 
 Requires: `numpy`, `pandas`, `xarray`, `matplotlib`, and `cartopy` (all in the Miniconda base environment).
